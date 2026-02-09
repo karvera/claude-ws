@@ -1,0 +1,122 @@
+"""Terminal display helpers using Rich."""
+
+from __future__ import annotations
+
+from typing import Dict, List
+
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+
+from .models import WardrobeItem, Preferences, Profile
+
+console = Console()
+
+
+def display_wardrobe_table(items: list[WardrobeItem]) -> None:
+    if not items:
+        console.print("[dim]No items in wardrobe.[/dim]")
+        return
+
+    table = Table(title="Wardrobe", show_lines=True)
+    table.add_column("ID", style="dim", max_width=8)
+    table.add_column("Category", style="cyan")
+    table.add_column("Subcategory", style="cyan")
+    table.add_column("Color", style="magenta")
+    table.add_column("Size")
+    table.add_column("Brand", style="green")
+    table.add_column("Occasion", style="yellow")
+    table.add_column("Season")
+
+    for item in items:
+        table.add_row(
+            item.id[:8],
+            item.category,
+            item.subcategory,
+            item.color,
+            item.size,
+            item.brand or "-",
+            item.occasion or "-",
+            item.season or "-",
+        )
+
+    console.print(table)
+
+
+def display_wardrobe_item(item: WardrobeItem) -> None:
+    lines = [
+        f"[bold]ID:[/bold]          {item.id}",
+        f"[bold]Category:[/bold]    {item.category}",
+        f"[bold]Subcategory:[/bold] {item.subcategory}",
+        f"[bold]Color:[/bold]       {item.color}",
+        f"[bold]Size:[/bold]        {item.size}",
+        f"[bold]Brand:[/bold]       {item.brand or '-'}",
+        f"[bold]Material:[/bold]    {item.material or '-'}",
+        f"[bold]Occasion:[/bold]    {item.occasion or '-'}",
+        f"[bold]Season:[/bold]      {item.season or '-'}",
+        f"[bold]Notes:[/bold]       {item.notes or '-'}",
+        f"[bold]Added:[/bold]       {item.date_added}",
+    ]
+    console.print(Panel("\n".join(lines), title="Wardrobe Item", border_style="cyan"))
+
+
+def display_profile(profile: Profile) -> None:
+    fields = [
+        ("Height", profile.height),
+        ("Weight", profile.weight),
+        ("Body Type", profile.body_type),
+        ("Chest", profile.chest),
+        ("Waist", profile.waist),
+        ("Hips", profile.hips),
+        ("Inseam", profile.inseam),
+        ("Shoe Size", profile.shoe_size),
+        ("Shirt Size", profile.shirt_size),
+        ("Pant Size", profile.pant_size),
+        ("Notes", profile.notes),
+    ]
+
+    lines = []
+    for label, value in fields:
+        lines.append(f"[bold]{label}:[/bold] {value or '[dim]-[/dim]'}")
+
+    console.print(Panel("\n".join(lines), title="Profile", border_style="green"))
+
+
+def display_preferences(prefs: Preferences) -> None:
+    lines = [
+        f"[bold]Preferred Colors:[/bold]    {', '.join(prefs.preferred_colors) or '-'}",
+        f"[bold]Avoided Colors:[/bold]      {', '.join(prefs.avoided_colors) or '-'}",
+        f"[bold]Preferred Brands:[/bold]    {', '.join(prefs.preferred_brands) or '-'}",
+        f"[bold]Preferred Materials:[/bold] {prefs.preferred_materials or '-'}",
+        f"[bold]Notes:[/bold]               {prefs.notes or '-'}",
+    ]
+
+    if prefs.budget_range:
+        lines.append("[bold]Budget Ranges:[/bold]")
+        for category, bounds in prefs.budget_range.items():
+            low = bounds.get("min", "?")
+            high = bounds.get("max", "?")
+            lines.append(f"  {category}: ${low} - ${high}")
+
+    console.print(Panel("\n".join(lines), title="Style Preferences", border_style="yellow"))
+
+
+def display_summary(items: list[WardrobeItem], profile: Profile, prefs: Preferences) -> None:
+    # Category counts
+    categories: dict[str, int] = {}
+    for item in items:
+        categories[item.category] = categories.get(item.category, 0) + 1
+
+    lines = [f"[bold]Total Items:[/bold] {len(items)}"]
+    if categories:
+        for cat, count in sorted(categories.items()):
+            lines.append(f"  {cat}: {count}")
+
+    has_profile = any([profile.height, profile.weight, profile.body_type])
+    has_prefs = any([prefs.preferred_colors, prefs.preferred_brands, prefs.preferred_materials])
+
+    lines.append("")
+    lines.append(f"[bold]Profile:[/bold]     {'[green]Set[/green]' if has_profile else '[dim]Not set[/dim]'}")
+    lines.append(f"[bold]Preferences:[/bold] {'[green]Set[/green]' if has_prefs else '[dim]Not set[/dim]'}")
+
+    console.print(Panel("\n".join(lines), title="Summary", border_style="blue"))

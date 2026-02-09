@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shopping-assistant"
+version = "0.1.0"
+description = "Personal shopping assistant CLI tool for wardrobe management"
+requires-python = ">=3.9"
+dependencies = [
+    "click>=8.0",
+    "rich>=13.0",
+]
+
+[project.scripts]
+shopping-assistant = "shopping_assistant.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["shopping_assistant*"]
