@@ -120,3 +120,29 @@ def display_summary(items: list[WardrobeItem], profile: Profile, prefs: Preferen
     lines.append(f"[bold]Preferences:[/bold] {'[green]Set[/green]' if has_prefs else '[dim]Not set[/dim]'}")
 
     console.print(Panel("\n".join(lines), title="Summary", border_style="blue"))
+
+
+def display_extracted_details(fields: Dict[str, str], source_url: str) -> None:
+    """Display scraped product details for user review."""
+    lines = [f"[dim]Source: {source_url}[/dim]", ""]
+
+    display_fields = [
+        ("Category", "category"),
+        ("Subcategory", "subcategory"),
+        ("Color", "color"),
+        ("Size", "size"),
+        ("Brand", "brand"),
+        ("Material", "material"),
+        ("Occasion", "occasion"),
+        ("Season", "season"),
+        ("Notes", "notes"),
+    ]
+
+    for label, key in display_fields:
+        val = fields.get(key, "")
+        if val:
+            lines.append(f"[bold]{label}:[/bold] [green]{val}[/green]")
+        else:
+            lines.append(f"[bold]{label}:[/bold] [yellow]\\[not detected][/yellow]")
+
+    console.print(Panel("\n".join(lines), title="Extracted Product Details", border_style="magenta"))
