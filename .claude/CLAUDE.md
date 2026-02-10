@@ -10,6 +10,7 @@ This is a monorepo for CLI tools and applications. Each app lives in its own top
 - Python 3.9+
 - Click (CLI framework)
 - Rich (terminal formatting)
+- Requests + BeautifulSoup (web scraping for product pages)
 - JSON file storage (per-app `data/` directories)
 
 ## Project Structure
@@ -21,7 +22,8 @@ claude-ws/
 │       ├── cli.py        # Click CLI entry point
 │       ├── models.py     # Dataclasses (WardrobeItem, Preferences, Profile)
 │       ├── storage.py    # JSON file CRUD
-│       └── display.py    # Rich tables/panels
+│       ├── display.py    # Rich tables/panels
+│       └── scraper.py    # Product page fetching & parsing (JSON-LD, OpenGraph, meta)
 └── .claude/
     └── CLAUDE.md
 ```
@@ -40,6 +42,7 @@ cd shopping-assistant && pip install -e .
 
 # Run commands
 shopping-assistant wardrobe add
+shopping-assistant wardrobe add-from-url <product-url>
 shopping-assistant wardrobe list
 shopping-assistant profile set
 shopping-assistant preferences set
