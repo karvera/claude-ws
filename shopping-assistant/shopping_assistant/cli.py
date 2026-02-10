@@ -16,12 +16,14 @@ from .storage import (
 )
 from .display import (
     console,
+    display_extracted_details,
     display_preferences,
     display_profile,
     display_summary,
     display_wardrobe_item,
     display_wardrobe_table,
 )
+from .scraper import ScraperError, extract_product_details, fetch_page, map_to_wardrobe_fields
 
 
 @click.group()
@@ -63,6 +65,50 @@ def wardrobe_add():
         notes=notes,
     )
 
+    add_wardrobe_item(item)
+    console.print(f"\n[green]Added item {item.id[:8]}...[/green]")
+    display_wardrobe_item(item)
+
+
+@wardrobe.command("add-from-url")
+@click.argument("url")
+def wardrobe_add_from_url(url):
+    """Add a wardrobe item by extracting details from a product URL."""
+    console.print("[bold]Fetching product page...[/bold]")
+    try:
+        html = fetch_page(url)
+    except ScraperError as e:
+        console.print(f"[red]Error fetching URL: {e}[/red]")
+        raise SystemExit(1)
+
+    console.print("[bold]Extracting product details...[/bold]")
+    details = extract_product_details(html, url)
+    fields = map_to_wardrobe_fields(details)
+
+    console.print()
+    display_extracted_details(fields, url)
+
+    console.print()
+    if not click.confirm("Use these details? (you can edit individual fields next)", default=True):
+        console.print("[dim]Cancelled.[/dim]")
+        return
+
+    console.print("\n[dim]Press Enter to keep extracted value.[/dim]\n")
+
+    editable_fields = ("category", "subcategory", "color", "size", "brand", "material", "occasion", "season", "notes")
+    final = {}
+    for field_name in editable_fields:
+        current = fields.get(field_name, "")
+        prompt_text = f"{field_name.capitalize()} [{current or ''}]"
+        new_val = click.prompt(prompt_text, default=current, show_default=False)
+        final[field_name] = new_val
+
+    # Require essential fields
+    for required in ("category", "subcategory", "color", "size"):
+        if not final[required]:
+            final[required] = click.prompt(f"{required.capitalize()} (required)")
+
+    item = WardrobeItem(**final)
     add_wardrobe_item(item)
     console.print(f"\n[green]Added item {item.id[:8]}...[/green]")
     display_wardrobe_item(item)
