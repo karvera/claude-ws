@@ -43,10 +43,23 @@ CATEGORY_KEYWORDS: Dict[str, List[str]] = {
 def fetch_page(url: str) -> str:
     """Fetch HTML content from a URL."""
     headers = {"User-Agent": "Mozilla/5.0 (compatible; ShoppingAssistant/0.1)"}
+    max_size = 5_000_000  # 5 MB
     try:
-        resp = requests.get(url, headers=headers, timeout=15)
+        resp = requests.get(url, headers=headers, timeout=15, stream=True)
         resp.raise_for_status()
-        return resp.text
+        content_length = resp.headers.get("content-length")
+        if content_length and int(content_length) > max_size:
+            resp.close()
+            raise ScraperError(f"Response too large ({int(content_length)} bytes, max {max_size})")
+        chunks = []
+        size = 0
+        for chunk in resp.iter_content(decode_unicode=True):
+            size += len(chunk)
+            if size > max_size:
+                resp.close()
+                raise ScraperError(f"Response too large (exceeded {max_size} bytes)")
+            chunks.append(chunk)
+        return "".join(chunks)
     except requests.exceptions.MissingSchema:
         raise ScraperError(f"Invalid URL: {url}")
     except requests.exceptions.ConnectionError:
