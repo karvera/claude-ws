@@ -19,6 +19,7 @@ from .display import (
     display_extracted_details,
     display_preferences,
     display_profile,
+    display_recommendations,
     display_summary,
     display_wardrobe_item,
     display_wardrobe_table,
@@ -313,6 +314,58 @@ def summary():
     prof = load_profile()
     prefs = load_preferences()
     display_summary(items, prof, prefs)
+
+
+# --- Shop command ---
+
+@cli.command()
+@click.argument("item_description")
+@click.option("--api-key", envvar="OPENAI_API_KEY", default=None, help="OpenAI API key (or set OPENAI_API_KEY env var)")
+@click.option("--model", default="gpt-4o", show_default=True, help="OpenAI model to use")
+def shop(item_description, api_key, model):
+    """Search for product recommendations using AI.
+
+    Describe what you're looking for in ITEM_DESCRIPTION, e.g.:
+
+        shopping-assistant shop "black travel pants, straight leg"
+    """
+    from .advisor import build_prompt, call_openai, parse_recommendations
+
+    if not api_key:
+        console.print("[red]Error: OpenAI API key is required.[/red]")
+        console.print("Provide it via --api-key or set the OPENAI_API_KEY environment variable.")
+        raise SystemExit(1)
+
+    # Load user context
+    wardrobe_items = load_wardrobe()
+    prof = load_profile()
+    prefs = load_preferences()
+
+    has_profile = any([prof.height, prof.weight, prof.body_type])
+    has_prefs = any([prefs.preferred_colors, prefs.preferred_brands, prefs.preferred_materials])
+
+    console.print(f"[bold]Shopping for:[/bold] {item_description}\n")
+    console.print(f"  Wardrobe items loaded: {len(wardrobe_items)}")
+    console.print(f"  Profile: {'[green]available[/green]' if has_profile else '[dim]not set[/dim]'}")
+    console.print(f"  Preferences: {'[green]available[/green]' if has_prefs else '[dim]not set[/dim]'}")
+    console.print()
+
+    prompt = build_prompt(item_description, wardrobe_items, prof, prefs)
+
+    console.print("[bold]Searching for recommendations...[/bold]")
+    try:
+        raw_text = call_openai(prompt, api_key, model)
+    except Exception as e:
+        error_name = type(e).__name__
+        console.print(f"\n[red]Error calling OpenAI API ({error_name}): {e}[/red]")
+        raise SystemExit(1)
+
+    if not raw_text:
+        console.print("[red]No response received from the API.[/red]")
+        raise SystemExit(1)
+
+    recommendations = parse_recommendations(raw_text)
+    display_recommendations(recommendations, item_description)
 
 
 if __name__ == "__main__":

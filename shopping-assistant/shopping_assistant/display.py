@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Dict, List
 
 from rich.console import Console
+from rich.markdown import Markdown
 from rich.table import Table
 from rich.panel import Panel
 
@@ -146,3 +147,25 @@ def display_extracted_details(fields: Dict[str, str], source_url: str) -> None:
             lines.append(f"[bold]{label}:[/bold] [yellow]\\[not detected][/yellow]")
 
     console.print(Panel("\n".join(lines), title="Extracted Product Details", border_style="magenta"))
+
+
+def display_recommendations(recommendations: list[dict], item_description: str) -> None:
+    """Display AI-generated product recommendations."""
+    # Fallback: raw text that couldn't be parsed as JSON
+    if len(recommendations) == 1 and "raw_text" in recommendations[0]:
+        md = Markdown(recommendations[0]["raw_text"])
+        console.print(Panel(md, title=f"Recommendations: {item_description}", border_style="magenta"))
+        return
+
+    console.print(f"\n[bold]Found {len(recommendations)} recommendation(s) for:[/bold] {item_description}\n")
+
+    for i, rec in enumerate(recommendations, 1):
+        lines = [
+            f"[bold]Name:[/bold]             {rec.get('name', '-')}",
+            f"[bold]Brand:[/bold]            {rec.get('brand', '-')}",
+            f"[bold]Price:[/bold]            {rec.get('price', '-')}",
+            f"[bold]Recommended Size:[/bold] {rec.get('recommended_size', '-')}",
+            f"[bold]Why It Fits:[/bold]      {rec.get('why_it_fits', '-')}",
+            f"[bold]Link:[/bold]             {rec.get('url', '-')}",
+        ]
+        console.print(Panel("\n".join(lines), title=f"#{i}", border_style="magenta"))
