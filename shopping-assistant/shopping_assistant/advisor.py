@@ -43,8 +43,8 @@ def build_prompt(
             ("Hips", profile.hips),
             ("Inseam", profile.inseam),
             ("Shoe size", profile.shoe_size),
-            ("Shirt size", profile.shirt_size),
-            ("Pant size", profile.pant_size),
+            ("Shirt size", ", ".join(profile.shirt_size) if profile.shirt_size else ""),
+            ("Pant size", ", ".join(profile.pant_size) if profile.pant_size else ""),
         ]
         for label, value in field_labels:
             if value:

@@ -62,8 +62,8 @@ class Profile:
     hips: str = ""
     inseam: str = ""
     shoe_size: str = ""
-    shirt_size: str = ""
-    pant_size: str = ""
+    shirt_size: List[str] = field(default_factory=list)
+    pant_size: List[str] = field(default_factory=list)
     notes: str = ""
 
     def to_dict(self) -> dict:

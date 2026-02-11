@@ -259,9 +259,12 @@ def profile_set():
         "hips": "Hips measurement",
         "inseam": "Inseam measurement",
         "shoe_size": "Shoe size (e.g., 10 US, 43 EU)",
-        "shirt_size": "Shirt size (e.g., M, L, 15.5)",
-        "pant_size": "Pant size (e.g., 32x32, M)",
         "notes": "Notes",
+    }
+
+    list_fields = {
+        "shirt_size": "Shirt sizes (e.g., M, L, 15.5)",
+        "pant_size": "Pant sizes (e.g., 32x32, M)",
     }
 
     data = {}
@@ -270,6 +273,9 @@ def profile_set():
         display = f" [{current_val}]" if current_val else ""
         new_val = click.prompt(f"{prompt_text}{display}", default=current_val, show_default=False)
         data[field_name] = new_val
+
+    for field_name, prompt_text in list_fields.items():
+        data[field_name] = _prompt_list(prompt_text, getattr(current, field_name))
 
     new_profile = Profile(**data)
     save_profile(new_profile)

@@ -71,8 +71,8 @@ def display_profile(profile: Profile) -> None:
         ("Hips", profile.hips),
         ("Inseam", profile.inseam),
         ("Shoe Size", profile.shoe_size),
-        ("Shirt Size", profile.shirt_size),
-        ("Pant Size", profile.pant_size),
+        ("Shirt Size", ", ".join(profile.shirt_size) if profile.shirt_size else ""),
+        ("Pant Size", ", ".join(profile.pant_size) if profile.pant_size else ""),
         ("Notes", profile.notes),
     ]
 
