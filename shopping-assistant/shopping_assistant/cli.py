@@ -2,16 +2,20 @@
 
 import click
 
-from .models import WardrobeItem, Preferences, Profile
+from .models import WardrobeItem, User, Preferences, Profile
 from .storage import (
     add_wardrobe_item,
+    create_user,
     get_wardrobe_item,
+    list_users,
+    load_active_user_id,
     load_preferences,
     load_profile,
     load_wardrobe,
     remove_wardrobe_item,
     save_preferences,
     save_profile,
+    switch_user,
     update_wardrobe_item,
 )
 from .display import (
@@ -21,6 +25,8 @@ from .display import (
     display_profile,
     display_recommendations,
     display_summary,
+    display_user,
+    display_user_table,
     display_wardrobe_item,
     display_wardrobe_table,
 )
@@ -30,6 +36,38 @@ from .scraper import ScraperError, extract_product_details, fetch_page, map_to_w
 @click.group()
 def cli():
     """Personal Shopping Assistant - manage your wardrobe and style."""
+
+
+# --- User commands ---
+
+@cli.group()
+def user():
+    """Manage users."""
+
+
+@user.command("create")
+def user_create():
+    """Create a new user."""
+    email = click.prompt("Email")
+    new_user = create_user(email)
+    console.print(f"\n[green]User created and set as active.[/green]")
+    display_user(new_user)
+
+
+@user.command("list")
+def user_list():
+    """List all users."""
+    users = list_users()
+    active_id = load_active_user_id()
+    display_user_table(users, active_id)
+
+
+@user.command("switch")
+@click.argument("identifier")
+def user_switch(identifier):
+    """Switch active user by UUID, UUID prefix, or email prefix."""
+    matched = switch_user(identifier)
+    console.print(f"[green]Switched to user: {matched.email} ({matched.id[:8]}...)[/green]")
 
 
 # --- Wardrobe commands ---
@@ -285,7 +323,9 @@ def preferences_set():
     notes_display = f" [{current_notes}]" if current_notes else ""
     notes = click.prompt(f"Notes{notes_display}", default=current_notes, show_default=False)
 
-    prefs = Preferences(
+    prefs = User(
+        id=current.id,
+        email=current.email,
         preferred_colors=preferred_colors,
         avoided_colors=avoided_colors,
         preferred_brands=preferred_brands,
@@ -313,7 +353,7 @@ def summary():
     items = load_wardrobe()
     prof = load_profile()
     prefs = load_preferences()
-    display_summary(items, prof, prefs)
+    display_summary(items, prof, prefs, active_email=prefs.email)
 
 
 # --- Shop command ---

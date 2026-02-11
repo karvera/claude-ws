@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.table import Table
 from rich.panel import Panel
 
-from .models import WardrobeItem, Preferences, Profile
+from .models import WardrobeItem, User, Preferences, Profile
 
 console = Console()
 
@@ -83,7 +83,7 @@ def display_profile(profile: Profile) -> None:
     console.print(Panel("\n".join(lines), title="Profile", border_style="green"))
 
 
-def display_preferences(prefs: Preferences) -> None:
+def display_preferences(prefs: User) -> None:
     lines = [
         f"[bold]Preferred Colors:[/bold]    {', '.join(prefs.preferred_colors) or '-'}",
         f"[bold]Avoided Colors:[/bold]      {', '.join(prefs.avoided_colors) or '-'}",
@@ -102,13 +102,53 @@ def display_preferences(prefs: Preferences) -> None:
     console.print(Panel("\n".join(lines), title="Style Preferences", border_style="yellow"))
 
 
-def display_summary(items: list[WardrobeItem], profile: Profile, prefs: Preferences) -> None:
+def display_user(user: User) -> None:
+    """Display a single user's info panel."""
+    has_prefs = any([user.preferred_colors, user.preferred_brands, user.preferred_materials])
+    lines = [
+        f"[bold]ID:[/bold]    {user.id}",
+        f"[bold]Email:[/bold] {user.email or '[dim]-[/dim]'}",
+        f"[bold]Prefs:[/bold] {'[green]Set[/green]' if has_prefs else '[dim]Not set[/dim]'}",
+    ]
+    console.print(Panel("\n".join(lines), title="User", border_style="blue"))
+
+
+def display_user_table(users: list[User], active_user_id: Optional[str] = None) -> None:
+    """Display a table of all users, marking the active one."""
+    if not users:
+        console.print("[dim]No users found.[/dim]")
+        return
+
+    table = Table(title="Users", show_lines=True)
+    table.add_column("", max_width=1)
+    table.add_column("ID", style="dim", max_width=8)
+    table.add_column("Email", style="cyan")
+    table.add_column("Prefs", style="yellow")
+
+    for user in users:
+        marker = "*" if active_user_id and user.id == active_user_id else ""
+        has_prefs = any([user.preferred_colors, user.preferred_brands, user.preferred_materials])
+        table.add_row(
+            marker,
+            user.id[:8],
+            user.email or "-",
+            "Set" if has_prefs else "-",
+        )
+
+    console.print(table)
+
+
+def display_summary(items: list[WardrobeItem], profile: Profile, prefs: User, active_email: Optional[str] = None) -> None:
     # Category counts
     categories: dict[str, int] = {}
     for item in items:
         categories[item.category] = categories.get(item.category, 0) + 1
 
-    lines = [f"[bold]Total Items:[/bold] {len(items)}"]
+    lines: list[str] = []
+    if active_email:
+        lines.append(f"[bold]User:[/bold] {active_email}")
+        lines.append("")
+    lines.append(f"[bold]Total Items:[/bold] {len(items)}")
     if categories:
         for cat, count in sorted(categories.items()):
             lines.append(f"  {cat}: {count}")

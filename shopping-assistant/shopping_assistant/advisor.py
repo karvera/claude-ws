@@ -5,14 +5,14 @@ from __future__ import annotations
 import json
 from typing import List
 
-from .models import Preferences, Profile, WardrobeItem
+from .models import User, Profile, WardrobeItem
 
 
 def build_prompt(
     item_description: str,
     wardrobe: list[WardrobeItem],
     profile: Profile,
-    preferences: Preferences,
+    preferences: User,
 ) -> str:
     """Assemble a prompt with user context for product recommendations."""
     sections: list[str] = []

@@ -31,7 +31,9 @@ class WardrobeItem:
 
 
 @dataclass
-class Preferences:
+class User:
+    id: str = field(default_factory=lambda: str(uuid4()))
+    email: str = ""
     preferred_colors: List[str] = field(default_factory=list)
     avoided_colors: List[str] = field(default_factory=list)
     preferred_brands: List[str] = field(default_factory=list)
@@ -43,8 +45,11 @@ class Preferences:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Preferences":
+    def from_dict(cls, data: dict) -> "User":
         return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
+
+
+Preferences = User  # backward-compat alias
 
 
 @dataclass
