@@ -14,6 +14,7 @@ class WardrobeItem:
     subcategory: str
     color: str
     size: str
+    name: str = ""
     brand: str = ""
     material: str = ""
     occasion: str = ""

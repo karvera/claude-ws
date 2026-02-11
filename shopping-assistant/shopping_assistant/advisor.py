@@ -60,7 +60,10 @@ def build_prompt(
     if wardrobe:
         lines = ["## Existing Wardrobe (suggest items that complement, not duplicate)"]
         for item in wardrobe:
-            parts = [item.category, item.subcategory, item.color, f"size {item.size}"]
+            parts = []
+            if item.name:
+                parts.append(item.name)
+            parts.extend([item.category, item.subcategory, item.color, f"size {item.size}"])
             if item.brand:
                 parts.append(item.brand)
             if item.material:
