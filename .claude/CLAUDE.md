@@ -20,8 +20,9 @@ claude-ws/
 │   ├── pyproject.toml
 │   └── shopping_assistant/
 │       ├── cli.py        # Click CLI entry point
-│       ├── models.py     # Dataclasses (WardrobeItem, Preferences, Profile)
-│       ├── storage.py    # JSON file CRUD
+│       ├── models.py     # Dataclasses (WardrobeItem, User, Profile)
+│       ├── storage.py    # JSON file CRUD, multi-user support, migration
+│       ├── advisor.py    # AI-powered shopping recommendations (OpenAI)
 │       ├── display.py    # Rich tables/panels
 │       └── scraper.py    # Product page fetching & parsing (JSON-LD, OpenGraph, meta)
 └── .claude/
@@ -31,6 +32,9 @@ claude-ws/
 ## Conventions
 - Each app is installable via `pip install -e .` from its directory.
 - Data files (JSON) live in each app's `data/` directory and are gitignored.
+- Multi-user: data is scoped per-user under `data/users/<uuid>/` with `data/active_user.json` tracking the active user.
+- `User` model (formerly `Preferences`) holds id, email, and style preference fields. `Preferences = User` alias exists for backward compat.
+- Old flat-file data is auto-migrated to per-user directories on first access.
 - Models use dataclasses with `to_dict()`/`from_dict()` for serialization.
 - Use `from __future__ import annotations` for Python 3.9 compatibility.
 - CLI entry points are registered in `pyproject.toml` under `[project.scripts]`.
@@ -41,10 +45,14 @@ claude-ws/
 cd shopping-assistant && pip install -e .
 
 # Run commands
+shopping-assistant user create
+shopping-assistant user list
+shopping-assistant user switch <identifier>
 shopping-assistant wardrobe add
 shopping-assistant wardrobe add-from-url <product-url>
 shopping-assistant wardrobe list
 shopping-assistant profile set
 shopping-assistant preferences set
 shopping-assistant summary
+shopping-assistant shop "description"
 ```
