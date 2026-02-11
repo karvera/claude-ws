@@ -21,6 +21,7 @@ def display_wardrobe_table(items: list[WardrobeItem]) -> None:
 
     table = Table(title="Wardrobe", show_lines=True)
     table.add_column("ID", style="dim", max_width=8)
+    table.add_column("Name", style="bold")
     table.add_column("Category", style="cyan")
     table.add_column("Subcategory", style="cyan")
     table.add_column("Color", style="magenta")
@@ -31,6 +32,7 @@ def display_wardrobe_table(items: list[WardrobeItem]) -> None:
     for item in items:
         table.add_row(
             item.id[:8],
+            item.name or "-",
             item.category,
             item.subcategory,
             item.color,
@@ -45,6 +47,7 @@ def display_wardrobe_table(items: list[WardrobeItem]) -> None:
 def display_wardrobe_item(item: WardrobeItem) -> None:
     lines = [
         f"[bold]ID:[/bold]          {item.id}",
+        f"[bold]Name:[/bold]        {item.name or '-'}",
         f"[bold]Category:[/bold]    {item.category}",
         f"[bold]Subcategory:[/bold] {item.subcategory}",
         f"[bold]Color:[/bold]       {item.color}",
@@ -165,6 +168,7 @@ def display_extracted_details(fields: Dict[str, str], source_url: str) -> None:
     lines = [f"[dim]Source: {source_url}[/dim]", ""]
 
     display_fields = [
+        ("Name", "name"),
         ("Category", "category"),
         ("Subcategory", "subcategory"),
         ("Color", "color"),

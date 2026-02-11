@@ -240,6 +240,7 @@ def map_to_wardrobe_fields(details: ProductDetails) -> Dict[str, str]:
         notes_parts.append(desc)
 
     return {
+        "name": details.name,
         "category": category,
         "subcategory": subcategory,
         "color": details.color,
