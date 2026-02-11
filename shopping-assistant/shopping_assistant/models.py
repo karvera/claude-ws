@@ -17,7 +17,6 @@ class WardrobeItem:
     brand: str = ""
     material: str = ""
     occasion: str = ""
-    season: str = ""
     notes: str = ""
     id: str = field(default_factory=lambda: str(uuid4()))
     date_added: str = field(default_factory=lambda: datetime.now().isoformat())

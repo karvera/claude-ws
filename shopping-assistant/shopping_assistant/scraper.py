@@ -247,7 +247,6 @@ def map_to_wardrobe_fields(details: ProductDetails) -> Dict[str, str]:
         "brand": details.brand,
         "material": details.material,
         "occasion": "",
-        "season": "",
         "notes": "\n".join(notes_parts),
     }
 
