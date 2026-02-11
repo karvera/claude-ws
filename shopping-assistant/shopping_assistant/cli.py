@@ -371,7 +371,8 @@ def summary():
 @click.argument("item_description")
 @click.option("--api-key", envvar="OPENAI_API_KEY", default=None, help="OpenAI API key (or set OPENAI_API_KEY env var)")
 @click.option("--model", default="gpt-4o", show_default=True, help="OpenAI model to use")
-def shop(item_description, api_key, model):
+@click.option("--dry-run", is_flag=True, default=False, help="Print the prompt without calling the API")
+def shop(item_description, api_key, model, dry_run):
     """Search for product recommendations using AI.
 
     Describe what you're looking for in ITEM_DESCRIPTION, e.g.:
@@ -380,15 +381,21 @@ def shop(item_description, api_key, model):
     """
     from .advisor import build_prompt, call_openai, parse_recommendations
 
-    if not api_key:
-        console.print("[red]Error: OpenAI API key is required.[/red]")
-        console.print("Provide it via --api-key or set the OPENAI_API_KEY environment variable.")
-        raise SystemExit(1)
-
     # Load user context
     wardrobe_items = load_wardrobe()
     prof = load_profile()
     prefs = load_preferences()
+
+    prompt = build_prompt(item_description, wardrobe_items, prof, prefs)
+
+    if dry_run:
+        console.print(prompt)
+        return
+
+    if not api_key:
+        console.print("[red]Error: OpenAI API key is required.[/red]")
+        console.print("Provide it via --api-key or set the OPENAI_API_KEY environment variable.")
+        raise SystemExit(1)
 
     has_profile = any([prof.height, prof.weight, prof.body_type])
     has_prefs = any([prefs.preferred_colors, prefs.preferred_brands, prefs.preferred_materials])
@@ -398,8 +405,6 @@ def shop(item_description, api_key, model):
     console.print(f"  Profile: {'[green]available[/green]' if has_profile else '[dim]not set[/dim]'}")
     console.print(f"  Preferences: {'[green]available[/green]' if has_prefs else '[dim]not set[/dim]'}")
     console.print()
-
-    prompt = build_prompt(item_description, wardrobe_items, prof, prefs)
 
     console.print("[bold]Searching for recommendations...[/bold]")
     try:
