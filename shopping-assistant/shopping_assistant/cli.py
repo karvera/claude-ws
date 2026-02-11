@@ -89,7 +89,6 @@ def wardrobe_add():
     brand = click.prompt("Brand", default="", show_default=False)
     material = click.prompt("Material", default="", show_default=False)
     occasion = click.prompt("Occasion (casual/formal/athletic)", default="", show_default=False)
-    season = click.prompt("Season (summer/winter/spring/fall/all)", default="", show_default=False)
     notes = click.prompt("Notes", default="", show_default=False)
 
     item = WardrobeItem(
@@ -100,7 +99,6 @@ def wardrobe_add():
         brand=brand,
         material=material,
         occasion=occasion,
-        season=season,
         notes=notes,
     )
 
@@ -134,7 +132,7 @@ def wardrobe_add_from_url(url):
 
     console.print("\n[dim]Press Enter to keep extracted value.[/dim]\n")
 
-    editable_fields = ("category", "subcategory", "color", "size", "brand", "material", "occasion", "season", "notes")
+    editable_fields = ("category", "subcategory", "color", "size", "brand", "material", "occasion", "notes")
     final = {}
     for field_name in editable_fields:
         current = fields.get(field_name, "")
@@ -222,7 +220,7 @@ def wardrobe_edit(item_id):
     console.print("[dim]Press Enter to keep current value.[/dim]\n")
 
     updates = {}
-    for field_name in ("category", "subcategory", "color", "size", "brand", "material", "occasion", "season", "notes"):
+    for field_name in ("category", "subcategory", "color", "size", "brand", "material", "occasion", "notes"):
         current = getattr(item, field_name)
         prompt_text = f"{field_name.capitalize()} [{current or ''}]"
         new_val = click.prompt(prompt_text, default=current, show_default=False)
