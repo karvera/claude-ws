@@ -35,6 +35,7 @@ claude-ws/
 - Multi-user: data is scoped per-user under `data/users/<uuid>/` with `data/active_user.json` tracking the active user.
 - `User` model (formerly `Preferences`) holds id, email, and style preference fields. `Preferences = User` alias exists for backward compat.
 - Old flat-file data is auto-migrated to per-user directories on first access.
+- `WardrobeItem` has an optional `name` field (e.g., "Classic Oxford Shirt") for identifying items. Auto-populated from product name when using `add-from-url`.
 - Models use dataclasses with `to_dict()`/`from_dict()` for serialization.
 - Use `from __future__ import annotations` for Python 3.9 compatibility.
 - CLI entry points are registered in `pyproject.toml` under `[project.scripts]`.
