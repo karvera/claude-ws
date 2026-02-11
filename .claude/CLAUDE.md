@@ -39,6 +39,11 @@ claude-ws/
 - Use `from __future__ import annotations` for Python 3.9 compatibility.
 - CLI entry points are registered in `pyproject.toml` under `[project.scripts]`.
 
+## Git Workflow
+- Always create a new feature branch off master for any changes. Never commit directly to master.
+- Branch naming: use short kebab-case names describing the change (e.g., `add-budget-command`, `fix-profile-display`).
+- After committing and pushing the feature branch, create a PR.
+
 ## Development
 ```bash
 # Install shopping-assistant in editable mode
