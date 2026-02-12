@@ -28,6 +28,7 @@ def display_wardrobe_table(items: list[WardrobeItem]) -> None:
     table.add_column("Size")
     table.add_column("Brand", style="green")
     table.add_column("Occasion", style="yellow")
+    table.add_column("Price", style="green")
 
     for item in items:
         table.add_row(
@@ -39,6 +40,7 @@ def display_wardrobe_table(items: list[WardrobeItem]) -> None:
             item.size,
             item.brand or "-",
             item.occasion or "-",
+            item.price or "-",
         )
 
     console.print(table)
@@ -55,6 +57,7 @@ def display_wardrobe_item(item: WardrobeItem) -> None:
         f"[bold]Brand:[/bold]       {item.brand or '-'}",
         f"[bold]Material:[/bold]    {item.material or '-'}",
         f"[bold]Occasion:[/bold]    {item.occasion or '-'}",
+        f"[bold]Price:[/bold]       {item.price or '-'}",
         f"[bold]Notes:[/bold]       {item.notes or '-'}",
         f"[bold]Added:[/bold]       {item.date_added}",
     ]
@@ -176,6 +179,7 @@ def display_extracted_details(fields: Dict[str, str], source_url: str) -> None:
         ("Brand", "brand"),
         ("Material", "material"),
         ("Occasion", "occasion"),
+        ("Price", "price"),
         ("Notes", "notes"),
     ]
 

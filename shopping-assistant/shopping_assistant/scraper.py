@@ -227,12 +227,10 @@ def map_to_wardrobe_fields(details: ProductDetails) -> Dict[str, str]:
     """Map extracted ProductDetails to WardrobeItem field names."""
     category, subcategory = _classify_category(details)
 
-    # Build notes from source URL, price, and description
+    # Build notes from source URL and description
     notes_parts = []
     if details.source_url:
         notes_parts.append(f"From: {details.source_url}")
-    if details.price:
-        notes_parts.append(f"Price: {details.price}")
     if details.description:
         desc = details.description[:200]
         if len(details.description) > 200:
@@ -248,6 +246,7 @@ def map_to_wardrobe_fields(details: ProductDetails) -> Dict[str, str]:
         "brand": details.brand,
         "material": details.material,
         "occasion": "",
+        "price": details.price,
         "notes": "\n".join(notes_parts),
     }
 
