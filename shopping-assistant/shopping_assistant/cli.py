@@ -379,7 +379,7 @@ def shop(item_description, api_key, model, dry_run):
 
         shopping-assistant shop "black travel pants, straight leg"
     """
-    from .advisor import build_prompt, call_openai, parse_recommendations
+    from .advisor import build_prompt, call_openai, parse_recommendations, validate_recommendations
 
     # Load user context
     wardrobe_items = load_wardrobe()
@@ -419,7 +419,23 @@ def shop(item_description, api_key, model, dry_run):
         raise SystemExit(1)
 
     recommendations = parse_recommendations(raw_text)
-    display_recommendations(recommendations, item_description)
+
+    # Skip validation for raw text fallback
+    if len(recommendations) == 1 and "raw_text" in recommendations[0]:
+        display_recommendations(recommendations, item_description)
+        return
+
+    console.print("[bold]Validating product URLs...[/bold]")
+    valid, invalid = validate_recommendations(recommendations)
+
+    if invalid:
+        console.print(f"[yellow]Filtered out {len(invalid)} product(s) with invalid URLs.[/yellow]")
+
+    if not valid:
+        console.print("[red]No recommendations with valid URLs found.[/red]")
+        raise SystemExit(1)
+
+    display_recommendations(valid, item_description)
 
 
 if __name__ == "__main__":
