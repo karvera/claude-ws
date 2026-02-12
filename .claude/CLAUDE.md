@@ -35,7 +35,9 @@ claude-ws/
 - Multi-user: data is scoped per-user under `data/users/<uuid>/` with `data/active_user.json` tracking the active user.
 - `User` model (formerly `Preferences`) holds id, email, and style preference fields. `Preferences = User` alias exists for backward compat.
 - Old flat-file data is auto-migrated to per-user directories on first access.
-- `WardrobeItem` has an optional `name` field (e.g., "Classic Oxford Shirt") for identifying items. Auto-populated from product name when using `add-from-url`.
+- `WardrobeItem` has optional `name` and `price` fields. Both auto-populated from product pages when using `add-from-url`.
+- `Profile` fields `shirt_size` and `pant_size` are `List[str]` (comma-separated input) to support multiple sizes.
+- The `shop` command uses OpenAI's Responses API with web search. The prompt requires web-search-sourced results only, and URLs are validated via HEAD requests before display. Use `--dry-run` to preview the prompt without calling the API.
 - Models use dataclasses with `to_dict()`/`from_dict()` for serialization.
 - Use `from __future__ import annotations` for Python 3.9 compatibility.
 - CLI entry points are registered in `pyproject.toml` under `[project.scripts]`.
@@ -61,4 +63,5 @@ shopping-assistant profile set
 shopping-assistant preferences set
 shopping-assistant summary
 shopping-assistant shop "description"
+shopping-assistant shop "description" --dry-run
 ```
