@@ -109,12 +109,18 @@ def build_prompt(
         f"## Item Request\n"
         f"The user is looking for: **{item_description}**\n"
         f"\n"
+        f"IMPORTANT: You MUST use the web search tool to find products. Only recommend\n"
+        f"products that appear in your web search results. Do NOT fabricate or guess\n"
+        f"product names, prices, or URLs from memory. Every URL must come directly from\n"
+        f"a web search result you retrieved. If you cannot find enough products via web\n"
+        f"search, return fewer results rather than inventing any.\n"
+        f"\n"
         f"Search the web for this item and recommend 3 to 5 specific products currently\n"
         f"available for purchase. For each product, provide:\n"
-        f"1. **Product name** -- the full product name\n"
+        f"1. **Product name** -- the exact product name from the retailer's listing\n"
         f"2. **Brand** -- the brand/manufacturer\n"
-        f"3. **Price** -- current price (include currency)\n"
-        f"4. **URL** -- a direct link to the product page\n"
+        f"3. **Price** -- current price as shown on the product page (include currency)\n"
+        f"4. **URL** -- the exact URL from your web search results (do NOT modify or guess URLs)\n"
         f"5. **Recommended size** -- based on the user's measurements above\n"
         f"6. **Why it fits** -- 1-2 sentences on why this product matches the user's\n"
         f"   style, preferences, and existing wardrobe\n"
@@ -146,6 +152,35 @@ def call_openai(prompt: str, api_key: str, model: str = "gpt-4o") -> str:
                     return content.text
 
     return ""
+
+
+def validate_recommendations(recommendations: list[dict], timeout: float = 5.0) -> tuple[list[dict], list[dict]]:
+    """Validate recommendation URLs via HEAD requests.
+
+    Returns (valid, invalid) tuple of recommendation lists.
+    """
+    import requests
+
+    valid: list[dict] = []
+    invalid: list[dict] = []
+
+    for rec in recommendations:
+        url = rec.get("url", "")
+        if not url or url == "-":
+            invalid.append(rec)
+            continue
+        try:
+            resp = requests.head(url, allow_redirects=True, timeout=timeout, headers={
+                "User-Agent": "Mozilla/5.0 (compatible; ShoppingAssistant/1.0)"
+            })
+            if resp.status_code < 400:
+                valid.append(rec)
+            else:
+                invalid.append(rec)
+        except (requests.RequestException, Exception):
+            invalid.append(rec)
+
+    return valid, invalid
 
 
 def parse_recommendations(raw_text: str) -> list[dict]:
