@@ -11,6 +11,7 @@ This is a monorepo for CLI tools and applications. Each app lives in its own top
 - Click (CLI framework)
 - Rich (terminal formatting)
 - Requests + BeautifulSoup (web scraping for product pages)
+- OpenAI (Responses API with web search for shopping recommendations)
 - JSON file storage (per-app `data/` directories)
 
 ## Project Structure
@@ -58,9 +59,14 @@ shopping-assistant user list
 shopping-assistant user switch <identifier>
 shopping-assistant wardrobe add
 shopping-assistant wardrobe add-from-url <product-url>
-shopping-assistant wardrobe list
+shopping-assistant wardrobe list [--category <cat>]
+shopping-assistant wardrobe show <item_id>
+shopping-assistant wardrobe edit <item_id>
+shopping-assistant wardrobe remove <item_id>
 shopping-assistant profile set
+shopping-assistant profile show
 shopping-assistant preferences set
+shopping-assistant preferences show
 shopping-assistant summary
 shopping-assistant shop "description"
 shopping-assistant shop "description" --dry-run
