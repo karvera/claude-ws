@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grocery-assistant"
+version = "0.1.0"
+description = "Grocery shopping assistant CLI — tracks Amazon Whole Foods order history and purchase frequency"
+requires-python = ">=3.9"
+dependencies = [
+    "click>=8.0",
+    "rich>=13.0",
+    "openai>=1.66",
+]
+
+[project.scripts]
+grocery-assistant = "grocery_assistant.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["grocery_assistant*"]
