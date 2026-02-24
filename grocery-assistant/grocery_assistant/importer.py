@@ -16,7 +16,7 @@ _COL_ORDER_ID = ["order id", "order_id"]
 _COL_DATE = ["order date", "order_date", "shipment date", "shipment_date"]
 _COL_TITLE = ["title", "product name", "item name", "item title"]
 _COL_ASIN = ["asin/isbn", "asin", "isbn"]
-_COL_QUANTITY = ["quantity", "qty"]
+_COL_QUANTITY = ["quantity", "qty", "original quantity"]
 _COL_PRICE = [
     "purchase price per unit",
     "unit price",
@@ -26,6 +26,7 @@ _COL_PRICE = [
 ]
 _COL_CATEGORY = ["category"]
 _COL_SELLER = ["seller"]
+_COL_WEBSITE = ["website"]
 
 
 def _normalize_header(headers: List[str]) -> Dict[str, str]:
@@ -48,6 +49,7 @@ def _normalize_header(headers: List[str]) -> Dict[str, str]:
         ("price", _COL_PRICE),
         ("category", _COL_CATEGORY),
         ("seller", _COL_SELLER),
+        ("website", _COL_WEBSITE),
     ]:
         col = find(candidates)
         if col:
@@ -60,10 +62,14 @@ def _is_grocery_row(row: dict, col_map: Dict[str, str]) -> bool:
     """Return True if the row looks like a Whole Foods / Amazon Fresh purchase."""
     category = row.get(col_map.get("category", ""), "").lower()
     seller = row.get(col_map.get("seller", ""), "").lower()
+    website = row.get(col_map.get("website", ""), "").lower()
 
     if "grocery" in category or "gourmet" in category or "fresh" in category:
         return True
     if "whole foods" in seller or "amazon fresh" in seller:
+        return True
+    # Amazon Privacy Central export uses Website column to identify Fresh/WF orders
+    if "amazonfresh" in website or "primenow" in website or "amazon go" in website:
         return True
     return False
 
@@ -71,6 +77,9 @@ def _is_grocery_row(row: dict, col_map: Dict[str, str]) -> bool:
 def _parse_date(raw: str) -> str:
     """Parse various date formats into YYYY-MM-DD; fall back to today."""
     raw = raw.strip()
+    # Strip ISO 8601 timezone suffix (e.g. 2024-04-05T14:55:53Z)
+    if "T" in raw:
+        raw = raw.split("T")[0]
     for fmt in (
         "%Y-%m-%d",
         "%m/%d/%Y",
