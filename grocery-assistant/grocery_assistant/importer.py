@@ -69,7 +69,7 @@ def _is_grocery_row(row: dict, col_map: Dict[str, str]) -> bool:
     if "whole foods" in seller or "amazon fresh" in seller:
         return True
     # Amazon Privacy Central export uses Website column to identify Fresh/WF orders
-    if "amazonfresh" in website or "primenow" in website or "amazon go" in website:
+    if "amazonfresh" in website or "primenow" in website or "amazon go" in website or "panda01" in website:
         return True
     return False
 
