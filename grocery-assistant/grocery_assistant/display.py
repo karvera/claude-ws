@@ -15,7 +15,7 @@ from .models import GroceryItem
 console = Console()
 
 # Items not purchased within this many days are excluded from overdue warnings.
-RECENT_DAYS = 365
+RECENT_DAYS = 730
 
 
 def _is_recently_active(last_purchased: str) -> bool:
