@@ -51,6 +51,8 @@ claude-ws/
 - `WardrobeItem` has optional `name` and `price` fields. Both auto-populated from product pages when using `add-from-url`.
 - `Profile` fields `shirt_size` and `pant_size` are `List[str]` (comma-separated input) to support multiple sizes.
 - The `shop` command uses OpenAI's Responses API with web search. The prompt requires web-search-sourced results only, and URLs are validated via HEAD requests before display. Use `--dry-run` to preview the prompt without calling the API.
+- `grocery-assistant import` accepts an Amazon Privacy Central ZIP (from `amazon.com/hz/privacy-central/data-requests/preview.html`) or any flat CSV. The real Privacy Central ZIP uses non-obvious column names: `Product Name` (title), `Original Quantity`, `Unit Price`, `Website`; no `Category` or `Seller` columns.
+- Grocery row filtering checks `Category`/`Seller` (old B2B CSV format) **and** `Website` (Privacy Central format). Rows with `Website` = `AmazonFresh`, `PrimeNow-US`, or `Amazon Go` are treated as grocery orders. Use `--all-categories` to skip filtering entirely.
 - `grocery-assistant import` deduplicates by `order_id|asin` key stored in `import_log.json`; re-running with the same file is safe.
 - `grocery-assistant` normalizer calls OpenAI once per unique ASIN (cached in memory per import run) to extract canonical name, category, brand, unit_size.
 - Models use dataclasses with `to_dict()`/`from_dict()` for serialization.
