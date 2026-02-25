@@ -5,13 +5,14 @@ This is a monorepo for CLI tools and applications. Each app lives in its own top
 
 ### Apps
 - **shopping-assistant/** — Personal shopping assistant CLI for wardrobe management, body profile, and style preferences.
+- **grocery-assistant/** — Grocery tracking CLI that imports Amazon order history and computes purchase frequency per item.
 
 ## Tech Stack
 - Python 3.9+
 - Click (CLI framework)
 - Rich (terminal formatting)
 - Requests + BeautifulSoup (web scraping for product pages)
-- OpenAI (Responses API with web search for shopping recommendations)
+- OpenAI (Responses API with web search for shopping recommendations; Chat Completions for grocery title normalization)
 - JSON file storage (per-app `data/` directories)
 
 ## Project Structure
@@ -26,6 +27,16 @@ claude-ws/
 │       ├── advisor.py    # AI-powered shopping recommendations (OpenAI)
 │       ├── display.py    # Rich tables/panels
 │       └── scraper.py    # Product page fetching & parsing (JSON-LD, OpenGraph, meta)
+├── grocery-assistant/
+│   ├── pyproject.toml
+│   └── grocery_assistant/
+│       ├── cli.py        # Click CLI entry point (`grocery-assistant` binary)
+│       ├── models.py     # Dataclasses (GroceryItem, Purchase)
+│       ├── storage.py    # JSON file CRUD, import deduplication log
+│       ├── importer.py   # Amazon Privacy Central ZIP/CSV parser + Whole Foods filter
+│       ├── normalizer.py # OpenAI: raw product title → canonical name + category
+│       ├── analyzer.py   # Purchase frequency computation (avg interval, predicted next)
+│       └── display.py    # Rich tables/panels
 └── .claude/
     └── CLAUDE.md
 ```
@@ -33,12 +44,15 @@ claude-ws/
 ## Conventions
 - Each app is installable via `pip install -e .` from its directory.
 - Data files (JSON) live in each app's `data/` directory and are gitignored.
-- Multi-user: data is scoped per-user under `data/users/<uuid>/` with `data/active_user.json` tracking the active user.
+- Multi-user (shopping-assistant): data is scoped per-user under `data/users/<uuid>/` with `data/active_user.json` tracking the active user.
+- Single-user (grocery-assistant): data lives directly in `data/items.json` and `data/import_log.json`.
 - `User` model (formerly `Preferences`) holds id, email, and style preference fields. `Preferences = User` alias exists for backward compat.
 - Old flat-file data is auto-migrated to per-user directories on first access.
 - `WardrobeItem` has optional `name` and `price` fields. Both auto-populated from product pages when using `add-from-url`.
 - `Profile` fields `shirt_size` and `pant_size` are `List[str]` (comma-separated input) to support multiple sizes.
 - The `shop` command uses OpenAI's Responses API with web search. The prompt requires web-search-sourced results only, and URLs are validated via HEAD requests before display. Use `--dry-run` to preview the prompt without calling the API.
+- `grocery-assistant import` deduplicates by `order_id|asin` key stored in `import_log.json`; re-running with the same file is safe.
+- `grocery-assistant` normalizer calls OpenAI once per unique ASIN (cached in memory per import run) to extract canonical name, category, brand, unit_size.
 - Models use dataclasses with `to_dict()`/`from_dict()` for serialization.
 - Use `from __future__ import annotations` for Python 3.9 compatibility.
 - CLI entry points are registered in `pyproject.toml` under `[project.scripts]`.
@@ -70,4 +84,17 @@ shopping-assistant preferences show
 shopping-assistant summary
 shopping-assistant shop "description"
 shopping-assistant shop "description" --dry-run
+
+# Install grocery-assistant in editable mode
+cd grocery-assistant && pip install -e .
+
+# Run commands
+grocery-assistant import <orders.zip>            # Amazon Privacy Central ZIP
+grocery-assistant import <orders.csv>            # flat CSV
+grocery-assistant import <file> --all-categories # skip Whole Foods filter
+grocery-assistant list                           # all items + frequency
+grocery-assistant list --category dairy          # filter by category
+grocery-assistant list --sort name|last|next     # change sort order
+grocery-assistant stats                          # summary + overdue items
+grocery-assistant show <item_id>                 # full purchase history (prefix OK)
 ```
