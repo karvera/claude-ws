@@ -14,10 +14,26 @@ from .models import GroceryItem
 
 console = Console()
 
+# Items not purchased within this many days are excluded from overdue warnings.
+RECENT_DAYS = 730
 
-def _overdue_label(predicted_next: Optional[str]) -> str:
-    """Return a Rich-formatted '(overdue)' tag if the predicted date has passed."""
+
+def _is_recently_active(last_purchased: str) -> bool:
+    """Return True if the item was purchased within RECENT_DAYS of today."""
+    try:
+        return (date.today() - date.fromisoformat(last_purchased)).days <= RECENT_DAYS
+    except ValueError:
+        return False
+
+
+def _overdue_label(predicted_next: Optional[str], last_purchased: Optional[str] = None) -> str:
+    """Return a Rich-formatted '(overdue)' tag if the predicted date has passed.
+
+    If last_purchased is provided, suppresses the tag for inactive items.
+    """
     if not predicted_next:
+        return ""
+    if last_purchased is not None and not _is_recently_active(last_purchased):
         return ""
     try:
         if date.fromisoformat(predicted_next) < date.today():
@@ -49,7 +65,7 @@ def display_frequency_table(
     for f in freqs:
         avg = f"{round(f.avg_interval_days)} days" if f.avg_interval_days else "-"
         next_str = f.predicted_next or "-"
-        overdue = _overdue_label(f.predicted_next)
+        overdue = _overdue_label(f.predicted_next, f.last_purchased)
         table.add_row(
             f.id[:8],
             f.canonical_name,
@@ -70,7 +86,7 @@ def display_item_detail(item: GroceryItem) -> None:
 
     freq = compute_frequency(item)
     avg = f"{round(freq.avg_interval_days)} days" if freq.avg_interval_days else "-"
-    next_str = (freq.predicted_next or "-") + _overdue_label(freq.predicted_next)
+    next_str = (freq.predicted_next or "-") + _overdue_label(freq.predicted_next, freq.last_purchased)
 
     lines = [
         f"[bold]ID:[/bold]             {item.id}",
@@ -114,7 +130,7 @@ def display_stats(freqs: List[ItemFrequency]) -> None:
         except ValueError:
             return False
 
-    overdue = [f for f in freqs if _is_overdue(f.predicted_next)]
+    overdue = [f for f in freqs if _is_overdue(f.predicted_next) and _is_recently_active(f.last_purchased)]
 
     categories: dict[str, int] = {}
     for f in freqs:
