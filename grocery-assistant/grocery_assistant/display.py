@@ -105,10 +105,16 @@ def display_stats(freqs: List[ItemFrequency]) -> None:
         return
 
     today = date.today()
-    overdue = [
-        f for f in freqs
-        if f.predicted_next and date.fromisoformat(f.predicted_next) < today
-    ]
+
+    def _is_overdue(predicted_next: Optional[str]) -> bool:
+        if not predicted_next:
+            return False
+        try:
+            return date.fromisoformat(predicted_next) < today
+        except ValueError:
+            return False
+
+    overdue = [f for f in freqs if _is_overdue(f.predicted_next)]
 
     categories: dict[str, int] = {}
     for f in freqs:
