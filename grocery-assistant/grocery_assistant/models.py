@@ -13,7 +13,9 @@ class Purchase:
     date: str           # ISO date string YYYY-MM-DD
     quantity: int
     price_per_unit: float
-    raw_title: str      # original Amazon product title
+    raw_title: str      # original product title as it appeared in the source data
+    store: str = ""     # e.g. "Whole Foods", "Kroger", "Amazon Fresh"
+    source: str = ""    # e.g. "amazon", "kroger_api", "instacart", "email_receipt"
 
     def to_dict(self) -> dict:
         return asdict(self)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from .models import GroceryItem
 
@@ -12,6 +12,7 @@ DEFAULT_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 ITEMS_FILE = "items.json"
 IMPORT_LOG_FILE = "import_log.json"
+TITLE_MAP_FILE = "title_map.json"
 
 
 def _ensure_dir(path: Path) -> None:
@@ -54,6 +55,17 @@ def find_item_by_id_prefix(prefix: str, items: List[GroceryItem]) -> Optional[Gr
         if item.id == prefix or item.id.startswith(prefix):
             return item
     return None
+
+
+# --- Title map (raw title → item id cache) ---
+
+def load_title_map(data_dir: Path = DEFAULT_DATA_DIR) -> Dict[str, str]:
+    """Load the title→item_id cache. Returns {} if the file doesn't exist yet."""
+    return _load_json(data_dir / TITLE_MAP_FILE, {})
+
+
+def save_title_map(title_map: Dict[str, str], data_dir: Path = DEFAULT_DATA_DIR) -> None:
+    _save_json(data_dir / TITLE_MAP_FILE, title_map)
 
 
 # --- Import log ---
