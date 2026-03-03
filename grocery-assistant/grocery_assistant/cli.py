@@ -14,8 +14,10 @@ from .storage import (
     find_item_by_id_prefix,
     load_imported_order_ids,
     load_items,
+    load_title_map,
     save_imported_order_ids,
     save_items,
+    save_title_map,
 )
 
 
@@ -38,7 +40,14 @@ def cli():
     default=False,
     help="Import all order rows, not just grocery/Whole Foods",
 )
-def import_cmd(file: Path, api_key: str, all_categories: bool):
+@click.option(
+    "--interactive",
+    "-i",
+    is_flag=True,
+    default=False,
+    help="Prompt to confirm AI-suggested matches for non-ASIN items",
+)
+def import_cmd(file: Path, api_key: str, all_categories: bool, interactive: bool):
     """Import orders from an Amazon Privacy Central ZIP or CSV.
 
     FILE can be:
@@ -50,9 +59,12 @@ def import_cmd(file: Path, api_key: str, all_categories: bool):
     Each row is matched to an existing item by ASIN; new items are normalized
     via OpenAI (requires OPENAI_API_KEY). Re-running with the same file is safe
     — already-imported orders are skipped automatically.
+
+    Use --interactive (-i) to be prompted when AI suggests a match for a title
+    that has no ASIN (e.g. items from non-Amazon stores).
     """
     from .importer import parse_file
-    from .normalizer import normalize_title
+    from .normalizer import find_match, normalize_title
 
     if not api_key:
         console.print("[red]Error: OpenAI API key required for title normalization.[/red]")
@@ -63,6 +75,7 @@ def import_cmd(file: Path, api_key: str, all_categories: bool):
 
     items = load_items()
     already_imported = load_imported_order_ids()
+    title_map = load_title_map()
     grocery_only = not all_categories
 
     new_purchases, skipped, total = parse_file(file, already_imported, grocery_only)
@@ -87,15 +100,23 @@ def import_cmd(file: Path, api_key: str, all_categories: bool):
 
     # Cache normalization results per ASIN (or raw title) to avoid duplicate API calls
     norm_cache: dict[str, dict] = {}
+    title_map_dirty = False
 
-    with console.status("[bold]Normalizing product titles via OpenAI...[/bold]"):
+    with console.status("[bold]Normalizing product titles via OpenAI...[/bold]") as status:
         for asin, purchase in new_purchases:
             new_dedup_keys.add(f"{purchase.order_id}|{asin or purchase.raw_title}")
 
-            # Find an existing item by ASIN first
+            # Fast path: match by ASIN
             existing = find_item_by_asin(asin, items) if asin else None
 
-            # Fall back to matching by raw title for ASIN-less rows
+            # title_map lookup (for previously confirmed non-ASIN matches)
+            if existing is None and not asin:
+                title_key = purchase.raw_title.lower()
+                mapped_id = title_map.get(title_key)
+                if mapped_id:
+                    existing = next((it for it in items if it.id == mapped_id), None)
+
+            # Exact raw_title match in purchase history (ASIN-less rows)
             if existing is None and not asin:
                 title_lower = purchase.raw_title.lower()
                 for it in items:
@@ -106,26 +127,79 @@ def import_cmd(file: Path, api_key: str, all_categories: bool):
             if existing is not None:
                 existing.purchases.append(purchase)
                 updated += 1
-            else:
-                cache_key = asin or purchase.raw_title
-                if cache_key not in norm_cache:
-                    norm_cache[cache_key] = normalize_title(purchase.raw_title, api_key)
-                norm = norm_cache[cache_key]
+                continue
 
-                new_item = GroceryItem(
-                    canonical_name=norm["canonical_name"],
-                    category=norm["category"],
-                    brand=norm["brand"],
-                    unit_size=norm["unit_size"],
-                    asin=asin,
-                    purchases=[purchase],
+            # New item — normalize via OpenAI
+            cache_key = asin or purchase.raw_title
+            if cache_key not in norm_cache:
+                if interactive and not asin:
+                    # Ask AI whether it matches any existing item
+                    status.stop()
+                    candidate_names = [it.canonical_name for it in items]
+                    norm_cache[cache_key] = find_match(purchase.raw_title, candidate_names, api_key)
+                    status.start()
+                else:
+                    norm_cache[cache_key] = normalize_title(purchase.raw_title, api_key)
+
+            norm = norm_cache[cache_key]
+
+            # Interactive confirmation when AI found a potential match
+            if interactive and not asin and norm.get("matched"):
+                suggested_name = norm["canonical_name"]
+                matched_item = next((it for it in items if it.canonical_name == suggested_name), None)
+                short_id = matched_item.id[:8] if matched_item else "?"
+
+                status.stop()
+                console.print(
+                    f"\n[bold]AI suggests:[/bold] \"{purchase.raw_title[:60]}\"\n"
+                    f"  → [cyan]{suggested_name}[/cyan] [dim](id: {short_id})[/dim]"
                 )
-                items.append(new_item)
-                added += 1
+                choice = click.prompt(
+                    "  [y] accept  [n] new item  [e] edit name",
+                    default="y",
+                ).strip().lower()
+
+                if choice == "y" and matched_item:
+                    matched_item.purchases.append(purchase)
+                    title_map[purchase.raw_title.lower()] = matched_item.id
+                    title_map_dirty = True
+                    updated += 1
+                    status.start()
+                    continue
+                elif choice == "e":
+                    custom_name = click.prompt("  Enter canonical name").strip()
+                    # Check if it matches an existing item by canonical name
+                    name_match = next(
+                        (it for it in items if it.canonical_name.lower() == custom_name.lower()), None
+                    )
+                    if name_match:
+                        name_match.purchases.append(purchase)
+                        title_map[purchase.raw_title.lower()] = name_match.id
+                        title_map_dirty = True
+                        updated += 1
+                        status.start()
+                        continue
+                    # Use custom_name for the new item below
+                    norm = {**norm, "canonical_name": custom_name}
+                # choice == "n" or unrecognized → fall through to create new item
+                status.start()
+
+            new_item = GroceryItem(
+                canonical_name=norm["canonical_name"],
+                category=norm.get("category", "other"),
+                brand=norm.get("brand", ""),
+                unit_size=norm.get("unit_size", ""),
+                asin=asin,
+                purchases=[purchase],
+            )
+            items.append(new_item)
+            added += 1
 
     save_items(items)
     already_imported |= new_dedup_keys
     save_imported_order_ids(already_imported)
+    if title_map_dirty:
+        save_title_map(title_map)
 
     console.print(
         f"[green]Done.[/green] "

@@ -74,6 +74,21 @@ def _is_grocery_row(row: dict, col_map: Dict[str, str]) -> bool:
     return False
 
 
+def _infer_store_source(row: dict, col_map: Dict[str, str]) -> tuple:
+    """Return (store, source) for an Amazon export row."""
+    website = row.get(col_map.get("website", ""), "").lower()
+    seller = row.get(col_map.get("seller", ""), "").lower()
+
+    if "panda01" in website or "whole foods" in seller:
+        store = "Whole Foods"
+    elif "amazonfresh" in website or "primenow" in website or "amazon go" in website:
+        store = "Amazon Fresh"
+    else:
+        store = ""
+
+    return store, "amazon"
+
+
 def _parse_date(raw: str) -> str:
     """Parse various date formats into YYYY-MM-DD; fall back to today."""
     raw = raw.strip()
@@ -153,6 +168,7 @@ def _purchases_from_rows(
         parsed_date = _parse_date(row.get(col_map.get("date", ""), ""))
         quantity = _parse_quantity(row.get(col_map.get("quantity", ""), "1"))
         price = _parse_price(row.get(col_map.get("price", ""), "0"))
+        store, source = _infer_store_source(row, col_map)
 
         purchase = Purchase(
             order_id=order_id,
@@ -160,6 +176,8 @@ def _purchases_from_rows(
             quantity=quantity,
             price_per_unit=price,
             raw_title=title,
+            store=store,
+            source=source,
         )
         results.append((asin, purchase))
 
