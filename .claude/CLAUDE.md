@@ -64,7 +64,9 @@ claude-ws/
 ## Git Workflow
 - Always create a new feature branch off master for any changes. Never commit directly to master.
 - Branch naming: use short kebab-case names describing the change (e.g., `add-budget-command`, `fix-profile-display`).
+- **Before pushing**, always run `git rebase origin/master` to ensure the branch is up to date and to drop any commits already squash-merged into master. Force-push with `git push --force-with-lease` after rebasing.
 - After committing and pushing the feature branch, create a PR.
+- Commit messages: short imperative subject line, optional body, always include `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`.
 
 ## Development
 ```bash
