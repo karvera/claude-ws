@@ -152,7 +152,7 @@ def display_stats(freqs: List[ItemFrequency]) -> None:
 
     if overdue:
         lines += ["", f"[bold][red]Overdue — buy soon ({len(overdue)}):[/red][/bold]"]
-        for f in sorted(overdue, key=lambda f: f.predicted_next or ""):
+        for f in sorted(overdue, key=lambda f: f.predicted_next or "", reverse=True):
             lines.append(f"  [red]{f.canonical_name}[/red] — was due {f.predicted_next}")
 
     console.print(Panel("\n".join(lines), title="Grocery Stats", border_style="blue"))
