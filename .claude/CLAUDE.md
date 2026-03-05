@@ -33,10 +33,11 @@ claude-ws/
 │       ├── cli.py        # Click CLI entry point (`grocery-assistant` binary)
 │       ├── models.py     # Dataclasses (GroceryItem, Purchase)
 │       ├── storage.py    # JSON file CRUD, import deduplication log
-│       ├── importer.py   # Amazon Privacy Central ZIP/CSV parser + Whole Foods filter
-│       ├── normalizer.py # OpenAI: raw product title → canonical name + category
-│       ├── analyzer.py   # Purchase frequency computation (avg interval, predicted next)
-│       └── display.py    # Rich tables/panels
+│       ├── importer.py      # Amazon Privacy Central ZIP/CSV parser + Whole Foods filter
+│       ├── receipt_parser.py # OpenAI vision: extract items from receipt image
+│       ├── normalizer.py    # OpenAI: raw product title → canonical name + category
+│       ├── analyzer.py      # Purchase frequency computation (avg interval, predicted next)
+│       └── display.py       # Rich tables/panels
 └── .claude/
     └── CLAUDE.md
 ```
@@ -55,6 +56,7 @@ claude-ws/
 - Grocery row filtering checks `Category`/`Seller` (old B2B CSV format) **and** `Website` (Privacy Central format). Rows with `Website` = `AmazonFresh`, `PrimeNow-US`, or `Amazon Go` are treated as grocery orders. Use `--all-categories` to skip filtering entirely.
 - `grocery-assistant import` deduplicates by `order_id|asin` key stored in `import_log.json`; re-running with the same file is safe.
 - `grocery-assistant` normalizer calls OpenAI once per unique ASIN (cached in memory per import run) to extract canonical name, category, brand, unit_size.
+- `grocery-assistant import-receipt` accepts a JPEG/PNG/WebP photo of a grocery receipt. Uses `gpt-4o` vision to extract store name, date, and line items. Dedup key is `receipt:<sha256[:12]>:<line_idx>|<raw_title>` so re-running the same image is safe and duplicate items on the same receipt are tracked separately. `Purchase.source` is set to `"receipt"`; `Purchase.store` is the AI-detected store name.
 - Models use dataclasses with `to_dict()`/`from_dict()` for serialization.
 - Use `from __future__ import annotations` for Python 3.9 compatibility.
 - CLI entry points are registered in `pyproject.toml` under `[project.scripts]`.
@@ -94,6 +96,8 @@ cd grocery-assistant && pip install -e .
 grocery-assistant import <orders.zip>            # Amazon Privacy Central ZIP
 grocery-assistant import <orders.csv>            # flat CSV
 grocery-assistant import <file> --all-categories # skip Whole Foods filter
+grocery-assistant import-receipt <receipt.jpg>   # receipt photo (JPEG/PNG/WebP)
+grocery-assistant import-receipt <receipt.jpg> -i  # interactive match prompts
 grocery-assistant list                           # all items + frequency
 grocery-assistant list --category dairy          # filter by category
 grocery-assistant list --sort name|last|next     # change sort order
